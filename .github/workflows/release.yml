@@ -1,0 +1,97 @@
+name: 构建并发布 / Build & Release
+
+# 触发方式：
+#   1. 推送形如 v1.1.0 的标签  → 自动打包并创建 Release
+#   2. 手动在 Actions 页面点运行 → 只打包，产物存在 Artifacts 里（不发 Release）
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write        # 创建 Release 需要写权限
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: 检出代码 / Checkout
+        uses: actions/checkout@v4
+
+      - name: 安装 Python / Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 安装依赖 / Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller openpyxl
+
+      - name: 打包成单文件 exe / Build single-file exe
+        run: |
+          python -m PyInstaller --noconfirm --onefile --windowed `
+            --name "施工排期甘特图工具_单文件版" `
+            gantt_tool.py
+
+      - name: 准备发布文件 / Prepare release assets
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+          Copy-Item "dist\施工排期甘特图工具_单文件版.exe" release\
+          # 附上简短说明
+          @"
+          施工排期甘特图工具 —— 使用说明（简单版）
+          ========================================
+
+          双击「施工排期甘特图工具_单文件版.exe」即可运行。
+          不用安装任何东西，不用联网。
+
+          第一次打开会慢几秒（在解压程序），之后就快了。
+
+          【数据存在哪】
+          数据不在 exe 旁边，而在：
+              我的文档 \ Project Gante \ autosave.json
+
+          程序第一次运行会自动建好这个文件夹。
+
+          【常用操作】
+            加任务    →  点左上角「＋ 添加任务」
+            改任务    →  双击那一行
+            删任务    →  选中那行，点「删除任务」
+            改错了    →  点「撤销」
+
+          本工具免费开源，随便用、随便改。
+          "@ | Out-File -Encoding utf8 "release\使用说明（简单版）.txt"
+
+      - name: 上传构建产物 / Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: 施工排期甘特图工具-windows
+          path: release/*
+          retention-days: 30
+
+      - name: 创建 Release / Create release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true
+          body: |
+            ## 施工排期甘特图工具 ${{ github.ref_name }}
+
+            ### 下载
+            下载下面的 `施工排期甘特图工具_单文件版.exe`，双击即可运行 ——
+            不用安装 Python，不用装任何环境。
+
+            首次运行会慢几秒（在解压），之后就快了。
+
+            ### 数据位置
+            数据存在 `我的文档\Project Gante\`，程序会自动创建。
+
+            ### 本次更新
+            见下方自动生成的变更记录。
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,217 @@
+# 施工排期甘特图工具
+
+[中文](#中文说明) · [English](#english)
+
+> 给工程人的、双击就能用的施工进度排期工具。
+> A construction scheduling tool for civil engineers — download and double-click, that's it.
+
+基于 Python + Tkinter 的**单机绿色工具**，打包后**单个 exe 双击即用** ——
+不用装环境、不用联网、U 盘带走就能在项目部电脑上跑。
+
+---
+
+## 中文说明
+
+### 为什么做这个
+
+工程上的进度排期，常见几种选择，各有各的别扭：
+
+| 方案 | 别扭在哪 |
+|------|---------|
+| Microsoft Project | 要钱、要装、要学；项目部电脑未必有 |
+| 在线甘特图平台 | 要联网、要注册；工地上网络未必好；数据还要传到别人服务器 |
+| 通用项目管理软件 | 下拉菜单里塞着 "FS/SS/FF + Lag"，不认得"搭接""分部工程" |
+| Excel 画横道图 | 能画，但改一个工期要手动挪一堆格子 |
+
+所以做了这个：**一个懂工程语境、又不添麻烦的现场工具**。
+
+### 特点
+
+**一、工程语义（而不是通用项目管理术语）**
+
+| 本工具 | 通用软件的叫法 | 为什么用工程说法 |
+|--------|--------------|----------------|
+| **搭接关系 / 搭接时间** | 前置任务 / Lead-Lag | 工地上就是这么说的 |
+| **分部工程** | WBS / 分组 | 《建筑工程施工质量验收统一标准》里的正式概念 |
+| **停歇期** | 日历 / 非工作日 | 春节、雨季、冬歇 —— 工程特有 |
+| **标准层自动生成** | 手动加 N 行 | 2F~18F 一键铺开，不用重复劳动 |
+
+**二、零门槛**
+- 单个 exe，双击就跑
+- 不写注册表、不装服务；删掉文件夹 = 完全卸载
+- 全程离线，数据只在自己电脑上
+
+**三、两个视图**
+- **甘特图**：按周/按天显示，关键路径高亮，Ctrl+滚轮缩放
+- **搭接关系图**：任务依赖网络图，看清工序流向
+
+### 功能一览
+
+**任务管理**
+- 主任务 / 子任务两级结构
+- 分部工程：自定义分类层（如"地基与基础工程""主体结构工程"），可折叠、可拖拽收纳
+- 标准层批量生成：填一层参数 → 自动生成 N 个子任务（带楼层号与递增日期）
+- 搭接关系：前置任务 + 搭接时间（正数延后、负数提前）
+- 停歇期管理：春节、雨季等停工期，自动顺延
+
+**视图**
+- 甘特图：按周/按天，关键路径红框标示
+- 搭接关系图：自动分层布局 + 蛇形折行，重复连线自动合并
+- 搜索定位：实时匹配下拉，自动展开、标黄、滚动居中
+- 显示今天：红色虚线标出当前日期
+- 画布缩放：Ctrl+滚轮，25% ~ 400%
+
+**数据**
+- 自动保存（每次改动即存）+ 历史备份
+- 保存 / 导入：`.json` 格式
+- 导出 Excel：两个工作表（主任务计划 / 全部任务计划），带甘特条
+
+### 快速开始
+
+**方式一：下载 exe（推荐给不装开发环境的人）**
+
+到 [Releases](../../releases) 页面下载 `施工排期甘特图工具_单文件版.exe`，双击运行。
+
+**方式二：从源码运行**
+
+```bash
+python gantt_tool.py
+```
+
+- 环境要求：Python 3.8+（Tkinter 是标准库，无需额外安装）
+- 导出 Excel 需要：`pip install openpyxl`
+
+**方式三：自己打包成 exe**
+
+```bash
+pip install pyinstaller
+python -m PyInstaller --noconfirm --onefile --windowed \
+    --name "施工排期甘特图工具" gantt_tool.py
+```
+
+输出在 `dist/` 下，双击 exe 即可。
+
+### 数据存在哪
+
+- **源码运行**：数据存在**程序所在文件夹**（跟着工程走）
+- **打包成 exe 运行**：数据存在 **`我的文档\Project Gante\`**（自动创建）
+
+> 为什么不一样？因为非技术用户容易把 exe 旁边的 `.json` 当垃圾文件删掉。
+> 如果你希望 exe 版也把数据放程序旁边，在 exe 同目录建个空文件 `portable.flag` 即可。
+
+### 使用说明（要点）
+
+**搭接时间**
+
+> 开始日期 = 所选前置中"最晚结束的日期" + 搭接时间
+
+- 填 `0`：前置干完第二天就开工
+- 填 `5`：前置干完再等 5 天
+- 填 `-10`：前置还没干完就提前 10 天进场（搭接施工）
+
+**分部工程**
+不是任务的父子关系，只是"归类"。一个任务随时可以换分部。
+
+**停歇期**
+如春节放假，设置后落在停歇期内的任务会自动顺延。
+
+### 已知限制
+
+- 目前只支持"完成-开始"（FS）一种搭接类型，用搭接时间模拟其他情况
+- 关键路径是"最晚结束链"高亮，不是完整 CPM 算法（无浮动时间计算）
+- 未做虚拟滚动，任务数特别大（万级）时可能变慢
+- 单机工具，无多人协作
+- 主要面向 Windows（用了 DPI 感知 API）
+
+### 许可
+
+MIT License —— 随便用、随便改、随便商用。
+
+---
+
+## English
+
+> A lightweight construction project scheduling tool for Chinese civil engineers.
+> Built with Python + Tkinter. Ships as a single standalone `.exe` — no install, no internet needed.
+
+### Why this exists
+
+Scheduling tools for construction sites tend to fall into two traps: either they are
+generic project-management software that speaks "FS/SS/FF + Lag" instead of the
+vocabulary engineers actually use, or they are cloud platforms that require
+registration and an internet connection your site may not have.
+
+This tool speaks the language of the site:
+
+| This tool | Generic PM software | Why |
+|-----------|--------------------|-----|
+| **搭接关系 / 搭接时间** (overlap relation / overlap time) | Predecessor / Lead-Lag | Site vocabulary |
+| **分部工程** (division of works) | WBS / Grouping | A formal concept in Chinese construction quality-acceptance standards |
+| **停歇期** (shutdown period) | Calendar / Non-working days | Spring Festival, rainy season, winter break |
+| **标准层自动生成** (standard-floor auto-generation) | Add N rows manually | Generate floors 2F–18F in one click |
+
+### Features
+
+- **Task management** — parent/sub-task hierarchy; custom "division of works" layers
+  (collapsible, drag-to-assign); bulk generation of standard floors; overlap
+  relations with lead/lag; shutdown periods (holidays, rainy season).
+- **Views** — Gantt chart (weekly/daily, critical path highlighted, Ctrl+wheel zoom);
+  precedence network diagram (auto-layered layout, duplicate links merged);
+  search with live suggestions, auto-expand and highlight; "today" marker line.
+- **Data** — autosave with rolling backups; JSON import/export;
+  Excel export (two sheets, with Gantt bars).
+
+### Quick start
+
+**Option 1 — download the exe** (recommended for non-developers)
+
+Grab `施工排期甘特图工具_单文件版.exe` from the [Releases](../../releases) page and double-click it.
+
+**Option 2 — run from source**
+
+```bash
+python gantt_tool.py
+```
+
+Requires Python 3.8+ (Tkinter ships with Python). Excel export needs `pip install openpyxl`.
+
+**Option 3 — build your own exe**
+
+```bash
+pip install pyinstaller
+python -m PyInstaller --noconfirm --onefile --windowed \
+    --name "施工排期甘特图工具" gantt_tool.py
+```
+
+### Where data is stored
+
+- **Run from source**: data lives next to the script.
+- **Run as packaged exe**: data lives in `Documents\Project Gante\` (created automatically).
+
+> The split exists because non-technical users tend to delete stray `.json` files
+> next to an exe. To make the packaged version keep data beside the exe instead,
+> create an empty file named `portable.flag` in the same folder.
+
+### Known limitations
+
+- Only Finish-to-Start (FS) relations; other types are simulated with lead/lag.
+- "Critical path" is a longest-chain highlight, not a full CPM with float calculation.
+- No virtual scrolling — very large projects (10k+ tasks) may feel slow.
+- Single-user desktop tool; no collaboration features.
+- Primarily Windows (uses DPI-awareness APIs).
+
+### License
+
+MIT — free to use, modify, and redistribute, including commercially.
+
+---
+
+## 贡献 / Contributing
+
+If you work in construction and find something awkward, or want a feature,
+feel free to open an Issue. This tool grew out of real scheduling pain —
+**knowing your pain point is worth more than anything**.
+
+## 致谢 / Credits
+
+Built with Python's standard `tkinter`. Excel export uses `openpyxl`.
