@@ -242,6 +242,22 @@ If you work in construction and find something awkward, or want a feature,
 feel free to open an Issue. This tool grew out of real scheduling pain —
 **knowing your pain point is worth more than anything**.
 
+## 开发方式 / How this was built
+
+本项目的需求、工程逻辑与验收标准由开发者确定；代码实现与调试由开发者与
+AI 编程助手协作完成。
+
+这也解释了项目里为什么保留了一套「版本检查点 + 一键重新打包」流程 ——
+在这种快速迭代的开发方式下，随时能回退到上一个可用版本很重要。
+
+> The requirements, engineering logic and acceptance criteria came from the developer.
+> Implementation and debugging were done in collaboration with an AI coding assistant.
+> That workflow is also why this project keeps a lightweight version-checkpoint and
+> repackaging setup — being able to roll back to the last working build matters when
+> you iterate quickly.
+
 ## 致谢 / Credits
 
-Built with Python's standard `tkinter`. Excel export uses `openpyxl`.
+- Python 标准库 `tkinter` —— 图形界面
+- [`openpyxl`](https://openpyxl.readthedocs.io/) —— Excel 导出
+- [`PyInstaller`](https://pyinstaller.org/) —— 打包成单文件 exe
