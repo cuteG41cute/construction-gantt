@@ -91,6 +91,16 @@ python -m PyInstaller --noconfirm --onefile --windowed \
 
 输出在 `dist/` 下，双击 exe 即可。
 
+### 📖 使用教程
+
+**第一次用？强烈建议先看 [使用教程](docs/教程.md)** —— 里面有：
+
+- 每个按钮是干什么的（配图）
+- **搭接关系怎么设**（这是关键，直接决定图表准不准）
+- 高效录入任务的技巧
+- 一个完整的建计划示例（主任务 / 子任务 / 分部工程）
+- 常见问题解答
+
 ### 数据存在哪
 
 - **源码运行**：数据存在**程序所在文件夹**（跟着工程走）
@@ -189,6 +199,12 @@ pip install pyinstaller
 python -m PyInstaller --noconfirm --onefile --windowed \
     --name "施工排期甘特图工具" gantt_tool.py
 ```
+
+### 📖 Tutorial
+
+New to this tool? See the **[tutorial (Chinese)](docs/教程.md)** with annotated screenshots —
+it covers every button, how to set up overlap relations, tips for fast data entry,
+and a complete worked example.
 
 ### Where data is stored
 
