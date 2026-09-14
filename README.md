@@ -125,7 +125,14 @@ python -m PyInstaller --noconfirm --onefile --windowed \
 
 ### 许可
 
-MIT License —— 随便用、随便改、随便商用。
+**GPL-3.0**（含作者附加条款）—— 你可以自由使用、修改、分发，但：
+
+1. **必须署名** —— 不得删除作者信息，不得宣称是自己原创
+2. **须告知作者** —— 分发或用于公开产品时，请知会一声
+3. **衍生作品必须开源** —— 改了之后分发，必须同样以 GPL-3.0 公开源码
+4. **保留授权文件** —— 不得移除 LICENSE
+
+详见 [LICENSE](LICENSE)。
 
 ---
 
@@ -202,7 +209,14 @@ python -m PyInstaller --noconfirm --onefile --windowed \
 
 ### License
 
-MIT — free to use, modify, and redistribute, including commercially.
+**GPL-3.0** with additional terms. You may use, modify and redistribute it freely, provided that:
+
+1. **Attribution is kept** — do not remove the author's copyright or claim the work as your own.
+2. **The author is notified** — please let the author know when you distribute it or ship it in a public product.
+3. **Derivatives stay open** — modified versions must be distributed under GPL-3.0 with full source.
+4. **This license file is kept** — do not remove LICENSE.
+
+See [LICENSE](LICENSE).
 
 ---
 
