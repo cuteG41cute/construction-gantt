@@ -20,9 +20,9 @@ TITLE = "施工进度甘特图工具"
 
 # 列表层级缩进（用空格模拟，增强可读性）
 #   分部工程 -> 1 格 / 主任务 -> 2 格 / 子任务 -> 3 格
-IND_SECTION = "    "
-IND_MAIN = "        "
-IND_SUB = "            "
+IND_SECTION = ""          # 分部不缩进（顶格）
+IND_MAIN = "    "      # 主任务缩进 1 格
+IND_SUB = "        "    # 子任务缩进 2 格
 APP_TITLE = "%s v%s" % (TITLE, VERSION)
 COLORS = ["#4FA892", "#6A9FCB", "#DFA0B4", "#C9B458", "#8A7FB8", "#4FA8A0",
           "#B47A50", "#5FA8D3", "#C75B7A", "#6B8E5A", "#9B7EBD", "#D3A05F"]
@@ -1319,10 +1319,11 @@ class GanttApp:
             if row:
                 self.tree.selection_set(row)
                 self.tree.focus(row)
+            self._menu.add_command(label="编辑任务…", command=self.edit_task)
+            self._menu.add_command(label="删除任务", command=self.delete_task)
+            self._menu.add_separator()
             self._menu.add_command(label="新建子任务", command=self.add_subtask)
             self._menu.add_command(label="展开/收起子任务", command=self._toggle_right_click)
-            self._menu.add_command(label="编辑任务", command=self.edit_task)
-            self._menu.add_command(label="删除任务", command=self.delete_task)
             self._menu.add_separator()
             sub = tk.Menu(self._menu, tearoff=0)
             sub.add_command(label="（未分类）",
@@ -2068,47 +2069,55 @@ class GanttApp:
             self._highlight_subtree(c, low, main)
 
     def _on_double_click(self, event):
-        """双击任意列：编辑/查看任务属性。展开子任务改用单击箭头或右键菜单。"""
-        self.edit_task()
+        """双击列表行：
+        · 分部行           -> 折叠/展开该分部
+        · 有子任务的父任务 -> 折叠/展开子任务
+        · 其他任务         -> 不动（编辑请用右键菜单）"""
+        region = self.tree.identify("region", event.x, event.y)
+        if region not in ("cell", "tree"):
+            return None
+        row = self.tree.identify_row(event.y)
+        if not row:
+            return None
+        # 分部行 -> 折叠/展开
+        if self._is_section_row(row):
+            self._toggle_section(self._section_of_row(row))
+            return "break"
+        # 任务行：有子任务则折叠/展开
+        name = self._row_name(row)
+        if name and self._children_of(name):
+            self._toggle_collapse(name)
+            return "break"
+        return None
+
+    def _row_name(self, iid):
+        """从某行取出"纯任务名"（去掉箭头、缩进前缀与分部计数尾巴）"""
+        try:
+            raw = str(self.tree.item(iid, "values")[0])
+        except Exception:
+            return None
+        name = raw
+        for pre in ("▸ ", "▾ ", "└ "):
+            if pre in name:
+                name = name.split(pre, 1)[1]
+                break
+        if "  (" in name:                 # 分部行 "xxx  (N 项)"
+            name = name.split("  (", 1)[0]
+        return name.strip()
 
     def _on_left_click(self, event):
-        """单击：名称列左端箭头区 -> 切换展开/收起（分部行同理）；
-        点到任务行 -> 选中并让甘特图居中。同时记录拖拽起点。"""
+        """单击：选中该行，并让甘特图居中。
+        （展开/收起 = 双击；编辑/删除 = 右键菜单）"""
         region = self.tree.identify("region", event.x, event.y)
-        col = self.tree.identify_column(event.x)
         row = self.tree.identify_row(event.y)
         # 记录拖拽起点（供 B1-Motion / ButtonRelease 判断是否发生拖拽）
         self._drag_from = row if (row and region == "cell") else None
         self._drag_moved = False
         if not row or region != "cell":
-            return
-        # 分部行：点名称列左端箭头区 -> 折叠/展开该分部
-        if self._is_section_row(row):
-            if col == "#1":
-                bbox = self.tree.bbox(row, col)
-                if bbox and 0 <= event.x - bbox[0] <= 22:
-                    self._toggle_section(self._section_of_row(row))
-                    self._drag_from = None
-                    return "break"
             return None
-        # 若点在名称列左端箭头区(前22px)且有子任务 -> 切换展开/收起
-        if col == "#1":
-            bbox = self.tree.bbox(row, col)
-            if bbox:
-                cell_x = event.x - bbox[0]
-                if 0 <= cell_x <= 22:
-                    raw = self.tree.item(row, "values")[0]
-                    name = raw
-                    for prefix in ("▸ ", "▾ ", "└ "):
-                        if name.startswith(prefix):
-                            name = name[len(prefix):]
-                            break
-                    for parent in self.tasks:
-                        if parent.get("level", 0) == 0 and parent.get("name") == name:
-                            if self._children_of(name):
-                                self._toggle_collapse(name)
-                                return "break"
-        # 任意列点到任务 -> 居中显示在甘特图
+        if self._is_section_row(row):
+            return None          # 分部行：单击不做事（双击才折叠）
+        # 点到任务行 -> 甘特图居中显示
         self._center_gantt_on_task(row)
         return None
 
