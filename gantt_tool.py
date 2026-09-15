@@ -1085,43 +1085,22 @@ class GanttApp:
         self.root.config(menu=self.menubar)
 
         # ============================================================
-        # 工具栏（一行）：最常用的操作 + 搜索框
+        # 工具条（一行）：搜索框 + 常用开关
+        # 常用操作都在菜单栏里，这里只保留搜索这类高频交互控件
         # ============================================================
         top = ttk.Frame(self.root, style="Toolbar.TFrame", padding=(8, int(5*_scale)))
         top.pack(fill="x")
 
-        def tb(parent, text, cmd, bg="#3B82F6", fg="white", hover="#2563EB"):
-            b = tk.Button(parent, text=text, command=cmd,
-                          bg=bg, fg=fg, activebackground=hover, activeforeground="white",
-                          relief="flat", borderwidth=0,
-                          font=("TkDefaultFont", btnsz),
-                          padx=int(12*_scale), pady=int(5*_scale),
-                          cursor="hand2")
-            b.pack(side="left", padx=(4, 0), pady=2)
-            return b
-
-        tb(top, "＋ 添加任务", self.add_task, bg="#3B82F6", hover="#2563EB")
-        tb(top, "＋ 新建子任务", self.add_subtask, bg="#10B981", hover="#059669")
-        tb(top, "＋ 分部工程", self.new_section, bg="#8B5CF6", hover="#7C3AED")
-        tb(top, "编辑任务", self.edit_task, bg="#6B7280", hover="#4B5563")
-        tb(top, "删除任务", self.delete_task, bg="#EF4444", hover="#DC2626")
-        ttk.Separator(top).pack(side="left", fill="y", padx=int(8*_scale), pady=4)
-        tb(top, "撤销", self.undo, bg="#6B7280", hover="#4B5563")
-        tb(top, "保存", self.save, bg="#6B7280", hover="#4B5563")
-        tb(top, "导出Excel", self.export_excel, bg="#6B7280", hover="#4B5563")
-
-        # ---------- 搜索框（留在工具栏上，常用） ----------
+        # ---------- 搜索框 ----------
         sframe = ttk.Frame(top)
-        sframe.pack(side="left", padx=(16, 4))
-        ttk.Label(sframe, text="🔍").pack(side="left", padx=(0, 2))
+        sframe.pack(side="left", padx=(2, 4))
+        ttk.Label(sframe, text="🔍 搜索：").pack(side="left", padx=(0, 2))
         self.search_var = tk.StringVar()
         self.search_entry = ttk.Entry(sframe, textvariable=self.search_var,
-                                      width=20)
+                                      width=24)
         self.search_entry.pack(side="left")
-        ttk.Button(sframe, text="搜索", width=6,
-                   command=self.do_search).pack(side="left", padx=3)
         ttk.Button(sframe, text="✕", width=3,
-                   command=self.clear_search).pack(side="left")
+                   command=self.clear_search).pack(side="left", padx=(3, 0))
         self.search_entry.bind("<Return>", lambda e: self.do_search())
         self.search_entry.bind("<KeyRelease>", self._on_search_typed)
         self.search_entry.bind("<Escape>", lambda e: self._hide_suggest())
