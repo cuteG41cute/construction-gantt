@@ -17,6 +17,12 @@ from datetime import datetime, date, timedelta
 
 VERSION = "1.1.0"
 TITLE = "施工进度甘特图工具"
+
+# 列表层级缩进（用空格模拟，增强可读性）
+#   分部工程 -> 1 格 / 主任务 -> 2 格 / 子任务 -> 3 格
+IND_SECTION = "    "
+IND_MAIN = "        "
+IND_SUB = "            "
 APP_TITLE = "%s v%s" % (TITLE, VERSION)
 COLORS = ["#4FA892", "#6A9FCB", "#DFA0B4", "#C9B458", "#8A7FB8", "#4FA8A0",
           "#B47A50", "#5FA8D3", "#C75B7A", "#6B8E5A", "#9B7EBD", "#D3A05F"]
@@ -1036,6 +1042,8 @@ class GanttApp:
         self.menubar = tk.Menu(self.root)
 
         m_task = tk.Menu(self.menubar, tearoff=0)
+        m_task.add_command(label="新建分部工程…", command=self.new_section)
+        m_task.add_separator()
         m_task.add_command(label="添加任务…", accelerator="Ctrl+N",
                            command=self.add_task)
         m_task.add_command(label="新建子任务…", accelerator="Ctrl+Shift+N",
@@ -1045,8 +1053,6 @@ class GanttApp:
                            command=self.edit_task)
         m_task.add_command(label="删除任务", accelerator="Delete",
                            command=self.delete_task)
-        m_task.add_separator()
-        m_task.add_command(label="新建分部工程…", command=self.new_section)
         self.menubar.add_cascade(label="任务(T)", menu=m_task)
 
         m_data = tk.Menu(self.menubar, tearoff=0)
@@ -1989,7 +1995,7 @@ class GanttApp:
             arrow = "▸" if coll else "▾"
             iid = self.SEC_IID_PREFIX + sec
             self.tree.insert("", "end", iid=iid,
-                             values=("%s %s  (%d 项)" % (arrow, sec, n),
+                             values=(IND_SECTION + "%s %s  (%d 项)" % (arrow, sec, n),
                                      "", "", "", "", "分部"),
                              open=not coll)
             sec_iid[sec] = iid
@@ -2003,7 +2009,8 @@ class GanttApp:
                 arrow = "▾" if (has_children and t.get("name") not in self.collapsed) else "▸"
                 open_state = t.get("name") not in self.collapsed
                 vals = list(self._row_values(disp))
-                vals[0] = arrow + " " + vals[0]  # 名称前加箭头
+                # 缩进：分部(1格) → 主任务(2格) → 子任务(3格)
+                vals[0] = IND_MAIN + arrow + " " + vals[0]
                 iid = t.get("_id") or _new_parent_id(self.tasks)
                 pid = sec_iid.get(self._section_of(t), "")
                 tid = self.tree.insert(pid, "end", iid=iid, values=vals, open=open_state)
@@ -2013,9 +2020,9 @@ class GanttApp:
                 pid = parent_id_map.get(t.get("parent"))
                 if pid is None:
                     pid = sec_iid.get(self._section_of(t), "")
-                # 子任务：用 └ 前缀表达包含关系
+                # 子任务：再深一级缩进 + └ 前缀表示包含关系
                 vals = list(self._row_values(t))
-                vals[0] = "└ " + vals[0]
+                vals[0] = IND_SUB + "└ " + vals[0]
                 iid = t.get("_id") or _new_sub_id("0", self.tasks)
                 self.tree.insert(pid, "end", iid=iid, values=vals, open=True)
 
