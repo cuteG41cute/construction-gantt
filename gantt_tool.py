@@ -1027,15 +1027,68 @@ class GanttApp:
         except Exception:
             pass
 
-        # 工具栏：主操作(蓝) / 文件(次) / 数据(次) / 危险(红) 分组
-        top = ttk.Frame(self.root, style="Toolbar.TFrame", padding=(8, int(6*_scale)))
+        # ============================================================
+        # 菜单栏（替代原来的三行按钮工具栏）
+        #  任务 / 数据 / 视图 / 帮助
+        # ============================================================
+        # 注意：var_today 要在菜单之前建好，因为「视图」菜单要引用它
+        self.var_today = tk.BooleanVar(value=False)
+        self.menubar = tk.Menu(self.root)
+
+        m_task = tk.Menu(self.menubar, tearoff=0)
+        m_task.add_command(label="添加任务…", accelerator="Ctrl+N",
+                           command=self.add_task)
+        m_task.add_command(label="新建子任务…", accelerator="Ctrl+Shift+N",
+                           command=self.add_subtask)
+        m_task.add_separator()
+        m_task.add_command(label="编辑任务…", accelerator="Enter",
+                           command=self.edit_task)
+        m_task.add_command(label="删除任务", accelerator="Delete",
+                           command=self.delete_task)
+        m_task.add_separator()
+        m_task.add_command(label="新建分部工程…", command=self.new_section)
+        self.menubar.add_cascade(label="任务(T)", menu=m_task)
+
+        m_data = tk.Menu(self.menubar, tearoff=0)
+        m_data.add_command(label="保存…", accelerator="Ctrl+S", command=self.save)
+        m_data.add_command(label="导入…", accelerator="Ctrl+O",
+                           command=self.import_config)
+        m_data.add_separator()
+        m_data.add_command(label="导出 Excel…", accelerator="Ctrl+E",
+                           command=self.export_excel)
+        m_data.add_separator()
+        m_data.add_command(label="停歇期设置…", command=self.manage_shutdowns)
+        m_data.add_separator()
+        m_data.add_command(label="载入示例数据", command=self.load_demo)
+        m_data.add_command(label="清空全部任务", command=self.clear_all)
+        self.menubar.add_cascade(label="数据(D)", menu=m_data)
+
+        m_view = tk.Menu(self.menubar, tearoff=0)
+        m_view.add_checkbutton(label="显示今天竖线", variable=self.var_today,
+                               command=self._on_toggle_today)
+        m_view.add_separator()
+        m_view.add_command(label="放大 (Ctrl+滚轮上)", command=lambda: self._zoom_by(1))
+        m_view.add_command(label="缩小 (Ctrl+滚轮下)", command=lambda: self._zoom_by(-1))
+        m_view.add_command(label="恢复 100%", command=self._zoom_reset)
+        m_view.add_separator()
+        m_view.add_command(label="展开全部分部", command=lambda: self._set_all_sections(False))
+        m_view.add_command(label="折叠全部分部", command=lambda: self._set_all_sections(True))
+        self.menubar.add_cascade(label="视图(V)", menu=m_view)
+
+        m_help = tk.Menu(self.menubar, tearoff=0)
+        m_help.add_command(label="使用说明", command=self._show_help)
+        m_help.add_command(label="关于 / 版本信息", command=self._show_about)
+        m_help.add_separator()
+        m_help.add_command(label="打开数据文件夹…", command=self.open_data_folder)
+        self.menubar.add_cascade(label="帮助(H)", menu=m_help)
+
+        self.root.config(menu=self.menubar)
+
+        # ============================================================
+        # 工具栏（一行）：最常用的操作 + 搜索框
+        # ============================================================
+        top = ttk.Frame(self.root, style="Toolbar.TFrame", padding=(8, int(5*_scale)))
         top.pack(fill="x")
-        # 第二行工具栏（按钮太多，一行放不下会被挤出窗口）
-        top2 = ttk.Frame(self.root, style="Toolbar.TFrame", padding=(8, int(2*_scale)))
-        top2.pack(fill="x")
-        # 第三行：搜索栏 + 显示今天 + 数据目录
-        top3 = ttk.Frame(self.root, style="Toolbar.TFrame", padding=(8, int(2*_scale)))
-        top3.pack(fill="x")
 
         def tb(parent, text, cmd, bg="#3B82F6", fg="white", hover="#2563EB"):
             b = tk.Button(parent, text=text, command=cmd,
@@ -1047,30 +1100,23 @@ class GanttApp:
             b.pack(side="left", padx=(4, 0), pady=2)
             return b
 
-        # ---- 第一行：任务操作 ----
         tb(top, "＋ 添加任务", self.add_task, bg="#3B82F6", hover="#2563EB")
         tb(top, "＋ 新建子任务", self.add_subtask, bg="#10B981", hover="#059669")
         tb(top, "＋ 分部工程", self.new_section, bg="#8B5CF6", hover="#7C3AED")
         tb(top, "编辑任务", self.edit_task, bg="#6B7280", hover="#4B5563")
         tb(top, "删除任务", self.delete_task, bg="#EF4444", hover="#DC2626")
+        ttk.Separator(top).pack(side="left", fill="y", padx=int(8*_scale), pady=4)
+        tb(top, "撤销", self.undo, bg="#6B7280", hover="#4B5563")
+        tb(top, "保存", self.save, bg="#6B7280", hover="#4B5563")
+        tb(top, "导出Excel", self.export_excel, bg="#6B7280", hover="#4B5563")
 
-        # ---- 第二行：文件/数据操作 + 搜索 + 显示今天 ----
-        tb(top2, "撤销", self.undo, bg="#6B7280", hover="#4B5563")
-        tb(top2, "保存", self.save, bg="#6B7280", hover="#4B5563")
-        tb(top2, "导入", self.import_config, bg="#6B7280", hover="#4B5563")
-        tb(top2, "导出Excel", self.export_excel, bg="#6B7280", hover="#4B5563")
-        ttk.Separator(top2).pack(side="left", fill="y", padx=int(8*_scale), pady=4)
-        tb(top2, "停歇期", self.manage_shutdowns, bg="#6B7280", hover="#4B5563")
-        tb(top2, "示例数据", self.load_demo, bg="#6B7280", hover="#4B5563")
-        tb(top2, "清空", self.clear_all, bg="#EF4444", hover="#DC2626")
-
-        # ---------- 搜索栏（实时匹配下拉） ----------
-        sframe = ttk.Frame(top3)
-        sframe.pack(side="left", padx=(4, 4))
+        # ---------- 搜索框（留在工具栏上，常用） ----------
+        sframe = ttk.Frame(top)
+        sframe.pack(side="left", padx=(16, 4))
         ttk.Label(sframe, text="🔍").pack(side="left", padx=(0, 2))
         self.search_var = tk.StringVar()
         self.search_entry = ttk.Entry(sframe, textvariable=self.search_var,
-                                      width=22)
+                                      width=20)
         self.search_entry.pack(side="left")
         ttk.Button(sframe, text="搜索", width=6,
                    command=self.do_search).pack(side="left", padx=3)
@@ -1083,18 +1129,25 @@ class GanttApp:
         self.suggest_win = None
         self.suggest_box = None
 
-        # ---------- 显示"当前时间"竖线（可勾选） ----------
-        self.var_today = tk.BooleanVar(value=False)
-        chk = ttk.Checkbutton(top3, text="显示今天", variable=self.var_today,
+        # ---------- 显示"当前时间"竖线（勾选框放工具栏右侧） ----------
+        chk = ttk.Checkbutton(top, text="显示今天", variable=self.var_today,
                               command=self._on_toggle_today)
         chk.pack(side="left", padx=(12, 4))
         # 一键打开数据目录（同事找不到数据在哪时用）
-        btn_data = ttk.Button(top3, text="📁 数据",
+        btn_data = ttk.Button(top, text="📁 数据",
                               command=self.open_data_folder)
         btn_data.pack(side="left", padx=(6, 4))
         # 定时刷新（每分钟更新一次竖线位置，跨天也能自动走到新的一天）
         self._today_job = None
         self._schedule_today_refresh()
+
+        # ---------- 快捷键 ----------
+        self.root.bind("<Control-n>", lambda e: self.add_task())
+        self.root.bind("<Control-N>", lambda e: self.add_subtask())
+        self.root.bind("<Control-s>", lambda e: self.save())
+        self.root.bind("<Control-o>", lambda e: self.import_config())
+        self.root.bind("<Control-e>", lambda e: self.export_excel())
+        self.root.bind("<Control-f>", lambda e: self._focus_search())
 
         paned = ttk.PanedWindow(self.root, orient="horizontal")
         paned.pack(fill="both", expand=True)
@@ -2531,6 +2584,87 @@ class GanttApp:
                 "数据目录",
                 "你的排期数据在这里：\n\n%s\n\n(自动打开失败：%s)" % (self.data_dir, e),
                 parent=self.root)
+
+    # ---------- 菜单栏用到的辅助方法 ----------
+    def _focus_search(self):
+        """Ctrl+F：跳到搜索框"""
+        try:
+            self.search_entry.focus_set()
+            self.search_entry.selection_range(0, "end")
+        except Exception:
+            pass
+
+    def _zoom_by(self, direction):
+        """菜单「放大/缩小」：等价于 Ctrl+滚轮一格"""
+        try:
+            c = self.canvas
+            cx = max(c.winfo_width() // 2, 1)
+            cy = max(c.winfo_height() // 2, 1)
+            delta = 120 if direction > 0 else -120
+            self._zoom_canvas(c, "gantt", delta, cx, cy)
+        except Exception as e:
+            self.status.set("缩放失败：%s" % e)
+
+    def _zoom_reset(self):
+        """菜单「恢复 100%」"""
+        try:
+            self.gantt_zoom = 1.0
+            self.net_zoom = 1.0
+            self.draw_gantt()
+            self._draw_network()
+            self.status.set("缩放已恢复 100%")
+        except Exception as e:
+            self.status.set("恢复缩放失败：%s" % e)
+
+    def _set_all_sections(self, collapse):
+        """菜单「展开/折叠全部分部」"""
+        if collapse:
+            self.section_collapsed = set(self._section_names())
+        else:
+            self.section_collapsed = set()
+        self.refresh_list()
+        self.status.set("已%s所有分部" % ("折叠" if collapse else "展开"))
+
+    def _show_help(self):
+        """菜单「使用说明」：弹出简要操作指引"""
+        msg = """【怎么用】
+
+加任务 → 菜单「任务 → 添加任务」，或工具栏「＋ 添加任务」
+改任务 → 双击那一行
+删任务 → 选中后按 Delete
+
+【核心建议】
+建任务时请用「前置任务 + 搭接时间」定义工序关系，
+而不是只填开始/结束日期 —— 这样：
+  · 搭接关系图才画得对
+  · 改工期时后面任务会自动顺延
+
+【常用操作】
+  分部工程 → 把任务拖到分部行上即可归类
+  搜索     → 工具栏搜索框，双击结果直接跳转
+  显示今天 → 勾选后甘特图出现红色虚线
+  缩放     → Ctrl + 滚轮
+
+【数据在哪】
+点菜单「帮助 → 打开数据文件夹」
+
+更详细的教程见项目文档。"""
+        messagebox.showinfo("使用说明", msg, parent=self.root)
+
+    def _show_about(self):
+        """菜单「关于」"""
+        try:
+            import gantt_tool as _self
+            ver = getattr(_self, "VERSION", "?")
+        except Exception:
+            ver = "?"
+        messagebox.showinfo(
+            "关于",
+            "施工排期甘特图工具  v%s\n\n"
+            "给工程人的、双击就能用的施工进度排期工具。\n\n"
+            "数据目录：\n%s\n\n"
+            "授权：GPL-3.0（含作者附加条款）" % (ver, self.data_dir),
+            parent=self.root)
 
     def _on_toggle_today(self):
         """勾选/取消「显示今天」"""
