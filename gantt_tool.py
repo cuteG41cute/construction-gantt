@@ -15,7 +15,7 @@ import os
 import sys
 from datetime import datetime, date, timedelta
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 TITLE = "施工进度甘特图工具"
 
 # 列表层级缩进（用空格模拟，增强可读性）
