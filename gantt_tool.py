@@ -1030,6 +1030,12 @@ class GanttApp:
         # 工具栏：主操作(蓝) / 文件(次) / 数据(次) / 危险(红) 分组
         top = ttk.Frame(self.root, style="Toolbar.TFrame", padding=(8, int(6*_scale)))
         top.pack(fill="x")
+        # 第二行工具栏（按钮太多，一行放不下会被挤出窗口）
+        top2 = ttk.Frame(self.root, style="Toolbar.TFrame", padding=(8, int(2*_scale)))
+        top2.pack(fill="x")
+        # 第三行：搜索栏 + 显示今天 + 数据目录
+        top3 = ttk.Frame(self.root, style="Toolbar.TFrame", padding=(8, int(2*_scale)))
+        top3.pack(fill="x")
 
         def tb(parent, text, cmd, bg="#3B82F6", fg="white", hover="#2563EB"):
             b = tk.Button(parent, text=text, command=cmd,
@@ -1041,24 +1047,26 @@ class GanttApp:
             b.pack(side="left", padx=(4, 0), pady=2)
             return b
 
+        # ---- 第一行：任务操作 ----
         tb(top, "＋ 添加任务", self.add_task, bg="#3B82F6", hover="#2563EB")
         tb(top, "＋ 新建子任务", self.add_subtask, bg="#10B981", hover="#059669")
         tb(top, "＋ 分部工程", self.new_section, bg="#8B5CF6", hover="#7C3AED")
         tb(top, "编辑任务", self.edit_task, bg="#6B7280", hover="#4B5563")
         tb(top, "删除任务", self.delete_task, bg="#EF4444", hover="#DC2626")
-        ttk.Separator(top).pack(side="left", fill="y", padx=int(8*_scale), pady=4)
-        tb(top, "撤销", self.undo, bg="#6B7280", hover="#4B5563")
-        tb(top, "保存", self.save, bg="#6B7280", hover="#4B5563")
-        tb(top, "导入", self.import_config, bg="#6B7280", hover="#4B5563")
-        tb(top, "导出Excel", self.export_excel, bg="#6B7280", hover="#4B5563")
-        ttk.Separator(top).pack(side="left", fill="y", padx=int(8*_scale), pady=4)
-        tb(top, "停歇期", self.manage_shutdowns, bg="#6B7280", hover="#4B5563")
-        tb(top, "示例数据", self.load_demo, bg="#6B7280", hover="#4B5563")
-        tb(top, "清空", self.clear_all, bg="#EF4444", hover="#DC2626")
+
+        # ---- 第二行：文件/数据操作 + 搜索 + 显示今天 ----
+        tb(top2, "撤销", self.undo, bg="#6B7280", hover="#4B5563")
+        tb(top2, "保存", self.save, bg="#6B7280", hover="#4B5563")
+        tb(top2, "导入", self.import_config, bg="#6B7280", hover="#4B5563")
+        tb(top2, "导出Excel", self.export_excel, bg="#6B7280", hover="#4B5563")
+        ttk.Separator(top2).pack(side="left", fill="y", padx=int(8*_scale), pady=4)
+        tb(top2, "停歇期", self.manage_shutdowns, bg="#6B7280", hover="#4B5563")
+        tb(top2, "示例数据", self.load_demo, bg="#6B7280", hover="#4B5563")
+        tb(top2, "清空", self.clear_all, bg="#EF4444", hover="#DC2626")
 
         # ---------- 搜索栏（实时匹配下拉） ----------
-        sframe = ttk.Frame(top)
-        sframe.pack(side="left", padx=(16, 4))
+        sframe = ttk.Frame(top3)
+        sframe.pack(side="left", padx=(4, 4))
         ttk.Label(sframe, text="🔍").pack(side="left", padx=(0, 2))
         self.search_var = tk.StringVar()
         self.search_entry = ttk.Entry(sframe, textvariable=self.search_var,
@@ -1077,11 +1085,11 @@ class GanttApp:
 
         # ---------- 显示"当前时间"竖线（可勾选） ----------
         self.var_today = tk.BooleanVar(value=False)
-        chk = ttk.Checkbutton(top, text="显示今天", variable=self.var_today,
+        chk = ttk.Checkbutton(top3, text="显示今天", variable=self.var_today,
                               command=self._on_toggle_today)
         chk.pack(side="left", padx=(12, 4))
         # 一键打开数据目录（同事找不到数据在哪时用）
-        btn_data = ttk.Button(top, text="📁 数据",
+        btn_data = ttk.Button(top3, text="📁 数据",
                               command=self.open_data_folder)
         btn_data.pack(side="left", padx=(6, 4))
         # 定时刷新（每分钟更新一次竖线位置，跨天也能自动走到新的一天）
